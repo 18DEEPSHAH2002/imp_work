@@ -54,19 +54,23 @@ if sheet_url:
                 'd.o.r': 'date_of_receipt',
                 'completion date': 'completion_date',
                 'action taken': 'action_taken',
-                'remarks': 'remarks'
+                'remarks': 'remarks',
+                'actor': 'department' # Renaming for clarity in charts
             }, inplace=True)
+            
+            # Fill missing department values
+            df['department'] = df['department'].fillna('Unassigned')
+
 
             # Determine task status
             df['status'] = df['remarks'].apply(lambda x: 'Completed' if pd.notna(x) and str(x).strip() != '' else 'Pending')
 
             # Identify 'Tatkal' tasks
-            # Ensure the 'priority' column exists before trying to access it
             if 'priority' in df.columns:
                 df['is_tatkal'] = df['priority'].str.strip().str.lower() == 'tatkal'
             else:
                 st.error("The 'priority' column was not found in your Google Sheet. Tatkal tasks cannot be identified.")
-                df['is_tatkal'] = False # Create the column with False values
+                df['is_tatkal'] = False 
 
             # --- Main Dashboard Metrics ---
             st.header("Overall Task Summary")
@@ -141,6 +145,51 @@ if sheet_url:
                     st.subheader("Tatkal Task Status")
                     st.info("No 'Tatkal' tasks to visualize.")
 
+            st.markdown("---")
+            st.header("Department-wise Breakdown")
+
+            # Separate normal tasks
+            normal_df = df[~df['is_tatkal']].copy()
+
+            viz_col3, viz_col4 = st.columns(2)
+
+            with viz_col3:
+                st.subheader("Normal Task Status by Department")
+                if not normal_df.empty:
+                    department_status_normal = normal_df.groupby(['department', 'status']).size().reset_index(name='count')
+                    fig_dept_normal = px.bar(
+                        department_status_normal,
+                        x='department',
+                        y='count',
+                        color='status',
+                        title='Normal Task Completion by Department',
+                        barmode='group',
+                        color_discrete_map={'Completed': '#4CAF50', 'Pending': '#F44336'}
+                    )
+                    fig_dept_normal.update_layout(xaxis_title="Department", yaxis_title="Number of Tasks", xaxis={'categoryorder':'total descending'})
+                    st.plotly_chart(fig_dept_normal, use_container_width=True)
+                else:
+                    st.info("No normal tasks to display.")
+
+            with viz_col4:
+                st.subheader("Tatkal Task Status by Department")
+                if not tatkal_df.empty:
+                    department_status_tatkal = tatkal_df.groupby(['department', 'status']).size().reset_index(name='count')
+                    fig_dept_tatkal = px.bar(
+                        department_status_tatkal,
+                        x='department',
+                        y='count',
+                        color='status',
+                        title='Tatkal Task Completion by Department',
+                        barmode='group',
+                        color_discrete_map={'Completed': '#2196F3', 'Pending': '#FF9800'}
+                    )
+                    fig_dept_tatkal.update_layout(xaxis_title="Department", yaxis_title="Number of Tasks", xaxis={'categoryorder':'total descending'})
+                    st.plotly_chart(fig_dept_tatkal, use_container_width=True)
+                else:
+                    st.info("No Tatkal tasks to display.")
+
+
             # --- Display Raw Data ---
             st.markdown("---")
             st.header("Raw Data View")
@@ -152,4 +201,3 @@ if sheet_url:
     except Exception as e:
         st.sidebar.error("An error occurred while fetching or processing the data.")
         st.error(f"Error: {e}. Please ensure the Google Sheet is public ('Anyone with the link can view') and the URL is correct.")
-
