@@ -24,13 +24,16 @@ def create_google_sheet_csv_url(url):
 # --- Title and Description ---
 st.title("📊 Task Completion Dashboard")
 st.markdown("""
-This dashboard provides a visual overview of task completion status from a Google Sheet.
-Enter the URL of your public Google Sheet in the sidebar to get started.
+This dashboard provides a visual overview of task completion status, automatically loaded from the project's Google Sheet.
 """)
 
-# --- Google Sheet URL Input ---
+# --- Hardcoded Google Sheet URL ---
+# The URL is now set here, so you don't need to enter it manually.
+sheet_url = "https://docs.google.com/spreadsheets/d/1qwfADBf4R2owb9LbANpUiOZ2ZoQ9Tk9IpnPz1KAPpYQ/edit?usp=sharing"
 st.sidebar.header("🔗 Data Source")
-sheet_url = st.sidebar.text_input("Enter your Google Sheet URL here:")
+st.sidebar.info("Data is being loaded automatically from the pre-configured Google Sheet.")
+st.sidebar.markdown(f"**[View Source Sheet]({sheet_url})**")
+
 
 if sheet_url:
     try:
@@ -39,7 +42,7 @@ if sheet_url:
         if csv_export_url:
             # Read data directly from the Google Sheet URL
             df = pd.read_csv(csv_export_url)
-            st.sidebar.success("Data loaded successfully from Google Sheet! 🎉")
+            st.sidebar.success("Data loaded successfully! 🎉")
 
             # --- Data Cleaning and Preparation ---
             # Standardize column names
@@ -58,7 +61,12 @@ if sheet_url:
             df['status'] = df['remarks'].apply(lambda x: 'Completed' if pd.notna(x) and str(x).strip() != '' else 'Pending')
 
             # Identify 'Tatkal' tasks
-            df['is_tatkal'] = df['priority'].str.strip().str.lower() == 'tatkal'
+            # Ensure the 'priority' column exists before trying to access it
+            if 'priority' in df.columns:
+                df['is_tatkal'] = df['priority'].str.strip().str.lower() == 'tatkal'
+            else:
+                st.error("The 'priority' column was not found in your Google Sheet. Tatkal tasks cannot be identified.")
+                df['is_tatkal'] = False # Create the column with False values
 
             # --- Main Dashboard Metrics ---
             st.header("Overall Task Summary")
@@ -139,11 +147,9 @@ if sheet_url:
             st.dataframe(df)
         
         else:
-            st.sidebar.error("Invalid Google Sheet URL. Please check the link and try again.")
+            st.sidebar.error("The hardcoded URL appears to be invalid. Please check the script.")
 
     except Exception as e:
         st.sidebar.error("An error occurred while fetching or processing the data.")
         st.error(f"Error: {e}. Please ensure the Google Sheet is public ('Anyone with the link can view') and the URL is correct.")
 
-else:
-    st.info("Please enter a Google Sheet URL in the sidebar to load the data.")
