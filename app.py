@@ -151,43 +151,43 @@ if sheet_url:
             # Separate normal tasks
             normal_df = df[~df['is_tatkal']].copy()
 
-            viz_col3, viz_col4 = st.columns(2)
+            # --- Sequential Bar Graphs ---
+            # Displaying graphs sequentially instead of in parallel columns
+            
+            st.subheader("Normal Task Status by Department")
+            if not normal_df.empty:
+                department_status_normal = normal_df.groupby(['department', 'status']).size().reset_index(name='count')
+                fig_dept_normal = px.bar(
+                    department_status_normal,
+                    x='department',
+                    y='count',
+                    color='status',
+                    title='Normal Task Completion by Department',
+                    barmode='group',
+                    color_discrete_map={'Completed': '#4CAF50', 'Pending': '#F44336'}
+                )
+                fig_dept_normal.update_layout(xaxis_title="Department", yaxis_title="Number of Tasks", xaxis={'categoryorder':'total descending'})
+                st.plotly_chart(fig_dept_normal, use_container_width=True)
+            else:
+                st.info("No normal tasks to display.")
 
-            with viz_col3:
-                st.subheader("Normal Task Status by Department")
-                if not normal_df.empty:
-                    department_status_normal = normal_df.groupby(['department', 'status']).size().reset_index(name='count')
-                    fig_dept_normal = px.bar(
-                        department_status_normal,
-                        x='department',
-                        y='count',
-                        color='status',
-                        title='Normal Task Completion by Department',
-                        barmode='group',
-                        color_discrete_map={'Completed': '#4CAF50', 'Pending': '#F44336'}
-                    )
-                    fig_dept_normal.update_layout(xaxis_title="Department", yaxis_title="Number of Tasks", xaxis={'categoryorder':'total descending'})
-                    st.plotly_chart(fig_dept_normal, use_container_width=True)
-                else:
-                    st.info("No normal tasks to display.")
-
-            with viz_col4:
-                st.subheader("Tatkal Task Status by Department")
-                if not tatkal_df.empty:
-                    department_status_tatkal = tatkal_df.groupby(['department', 'status']).size().reset_index(name='count')
-                    fig_dept_tatkal = px.bar(
-                        department_status_tatkal,
-                        x='department',
-                        y='count',
-                        color='status',
-                        title='Tatkal Task Completion by Department',
-                        barmode='group',
-                        color_discrete_map={'Completed': '#2196F3', 'Pending': '#FF9800'}
-                    )
-                    fig_dept_tatkal.update_layout(xaxis_title="Department", yaxis_title="Number of Tasks", xaxis={'categoryorder':'total descending'})
-                    st.plotly_chart(fig_dept_tatkal, use_container_width=True)
-                else:
-                    st.info("No Tatkal tasks to display.")
+            
+            st.subheader("Tatkal Task Status by Department")
+            if not tatkal_df.empty:
+                department_status_tatkal = tatkal_df.groupby(['department', 'status']).size().reset_index(name='count')
+                fig_dept_tatkal = px.bar(
+                    department_status_tatkal,
+                    x='department',
+                    y='count',
+                    color='status',
+                    title='Tatkal Task Completion by Department',
+                    barmode='group',
+                    color_discrete_map={'Completed': '#2196F3', 'Pending': '#FF9800'}
+                )
+                fig_dept_tatkal.update_layout(xaxis_title="Department", yaxis_title="Number of Tasks", xaxis={'categoryorder':'total descending'})
+                st.plotly_chart(fig_dept_tatkal, use_container_width=True)
+            else:
+                st.info("No Tatkal tasks to display.")
 
 
             # --- Display Raw Data ---
